@@ -26,15 +26,12 @@ def format_to_brl(value):
         formatted = f"{num:_.2f}".replace(".", "X").replace("_", ".").replace("X", ",")
         return f"R$ {formatted}"
     except Exception:
-        return "R$ N/A"
+        return "R$ 0,00"
 
 def load_css(file_name="style.css"):
     if os.path.exists(file_name):
-        try:
-            with open(file_name, encoding="utf-8") as f:
-                st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-        except Exception:
-            pass
+        with open(file_name, encoding="utf-8") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 # =========================
 # ESTILO
@@ -46,14 +43,14 @@ load_css("style.css")
 # =========================
 st.title("💰 Histórico de Produtos Vendidos")
 st.markdown("---")
-st.info("Lista de produtos que já tiveram vendas, com quantidade vendida calculada automaticamente.")
+st.info("Resumo completo das vendas realizadas, com faturamento total e por produto.")
 
 # =========================
 # DADOS
 # =========================
 todos = get_all_produtos(include_sold=True)
 
-# Produtos que já tiveram venda
+# Apenas produtos que tiveram venda
 vendidos = [p for p in todos if p.get("data_ultima_venda")]
 
 if not vendidos:
@@ -61,7 +58,7 @@ if not vendidos:
     st.stop()
 
 # =========================
-# MÉTRICAS
+# CÁLCULOS PRINCIPAIS
 # =========================
 total_produtos_vendidos = len(vendidos)
 total_unidades_vendidas = 0
@@ -75,13 +72,26 @@ for p in vendidos:
     total_unidades_vendidas += qtd_vendida
     faturamento_estimado += qtd_vendida * safe_float(p.get("preco", 0))
 
+# =========================
+# MÉTRICAS
+# =========================
 col1, col2, col3 = st.columns(3)
+
 with col1:
-    st.metric("Produtos vendidos", total_produtos_vendidos)
+    st.metric("📦 Produtos vendidos", total_produtos_vendidos)
+
 with col2:
-    st.metric("Unidades vendidas", total_unidades_vendidas)
+    st.metric("📉 Unidades vendidas", total_unidades_vendidas)
+
 with col3:
-    st.metric("Faturamento estimado", format_to_brl(faturamento_estimado))
+    st.metric("💰 Faturamento estimado", format_to_brl(faturamento_estimado))
+
+# =========================
+# DESTAQUE PRINCIPAL
+# =========================
+st.success(
+    f"💰 **VALOR TOTAL ARRECADADO COM VENDAS:** {format_to_brl(faturamento_estimado)}"
+)
 
 st.markdown("---")
 
@@ -93,11 +103,13 @@ for p in vendidos:
     qtd_atual = safe_int(p.get("quantidade", 0))
     qtd_vendida = max(qtd_inicial - qtd_atual, 0)
 
+    valor_produto = qtd_vendida * safe_float(p.get("preco", 0))
+
     with st.container(border=True):
         col_info, col_img = st.columns([3, 1])
 
         with col_info:
-            st.markdown(f"### {p.get('nome', 'N/A')}")
+            st.markdown(f"### 🛒 {p.get('nome', 'Produto sem nome')}")
             st.write(f"💲 **Preço unitário:** {format_to_brl(p.get('preco', 0))}")
 
             st.write(
@@ -106,6 +118,11 @@ for p in vendidos:
                 📉 **Quantidade atual:** {qtd_atual}  
                 ✅ **Quantidade vendida:** **{qtd_vendida}**
                 """
+            )
+
+            st.write(
+                f"💵 **Total vendido deste produto:** "
+                f"**{format_to_brl(valor_produto)}**"
             )
 
             st.caption(
@@ -123,12 +140,12 @@ for p in vendidos:
                 if os.path.exists(path):
                     st.image(path, use_container_width=True)
                 else:
-                    st.caption("Sem foto")
+                    st.caption("Imagem não encontrada")
             else:
-                st.caption("Sem foto")
+                st.caption("Sem imagem")
 
 # =========================
 # RODAPÉ
 # =========================
 st.markdown("---")
-st.caption(f"Atualizado em {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+st.caption(f"📅 Atualizado em {datetime.now().strftime('%d/%m/%Y %H:%M')}")
