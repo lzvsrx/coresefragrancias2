@@ -22,55 +22,45 @@ st.set_page_config(
 # =========================
 def format_to_brl(value):
     try:
-        num = safe_float(value)
-        formatted = f"{num:_.2f}".replace(".", "X").replace("_", ".").replace("X", ",")
-        return f"R$ {formatted}"
+        value = safe_float(value)
+        return f"R$ {value:_.2f}".replace(".", "X").replace("_", ".").replace("X", ",")
     except Exception:
         return "R$ 0,00"
-
-def load_css(file_name="style.css"):
-    if os.path.exists(file_name):
-        with open(file_name, encoding="utf-8") as f:
-            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-
-# =========================
-# ESTILO
-# =========================
-load_css("style.css")
 
 # =========================
 # CABEÇALHO
 # =========================
-st.title("💰 Histórico de Produtos Vendidos")
+st.title("💰 Relatório de Produtos Vendidos")
 st.markdown("---")
-st.info("Resumo completo das vendas realizadas, com faturamento total e por produto.")
 
 # =========================
-# DADOS
+# BUSCA DE DADOS
 # =========================
-todos = get_all_produtos(include_sold=True)
+produtos = get_all_produtos(include_sold=True)
 
-# Apenas produtos que tiveram venda
-vendidos = [p for p in todos if p.get("data_ultima_venda")]
+# Apenas produtos com venda registrada
+vendidos = [p for p in produtos if p.get("data_ultima_venda")]
 
 if not vendidos:
-    st.success("Nenhum produto vendido até o momento.")
+    st.info("Nenhum produto vendido até o momento.")
     st.stop()
 
 # =========================
-# CÁLCULOS PRINCIPAIS
+# CÁLCULOS
 # =========================
 total_produtos_vendidos = len(vendidos)
 total_unidades_vendidas = 0
-faturamento_estimado = 0.0
+valor_total_vendido = 0.0
 
 for p in vendidos:
     qtd_inicial = safe_int(p.get("quantidade_inicial", 0))
     qtd_atual = safe_int(p.get("quantidade", 0))
     qtd_vendida = max(qtd_inicial - qtd_atual, 0)
 
+    preco = safe_float(p.get("preco", 0))
+
     total_unidades_vendidas += qtd_vendida
-    faturamento_estimado += qtd_vendida * safe_float(p.get("preco", 0))
+    valor_total_vendido += qtd_vendida * preco
 
 # =========================
 # MÉTRICAS
@@ -84,46 +74,36 @@ with col2:
     st.metric("📉 Unidades vendidas", total_unidades_vendidas)
 
 with col3:
-    st.metric("💰 Faturamento estimado", format_to_brl(faturamento_estimado))
+    st.metric("💰 Valor total vendido", format_to_brl(valor_total_vendido))
 
 # =========================
-# DESTAQUE PRINCIPAL
+# DESTAQUE DO FATURAMENTO
 # =========================
 st.success(
-    f"💰 **VALOR TOTAL ARRECADADO COM VENDAS:** {format_to_brl(faturamento_estimado)}"
+    f"💰 **VALOR TOTAL DOS PRODUTOS VENDIDOS:** {format_to_brl(valor_total_vendido)}"
 )
 
 st.markdown("---")
 
 # =========================
-# LISTAGEM DOS PRODUTOS
+# LISTAGEM DETALHADA
 # =========================
 for p in vendidos:
     qtd_inicial = safe_int(p.get("quantidade_inicial", 0))
     qtd_atual = safe_int(p.get("quantidade", 0))
     qtd_vendida = max(qtd_inicial - qtd_atual, 0)
+    preco = safe_float(p.get("preco", 0))
 
-    valor_produto = qtd_vendida * safe_float(p.get("preco", 0))
+    total_produto = qtd_vendida * preco
 
     with st.container(border=True):
         col_info, col_img = st.columns([3, 1])
 
         with col_info:
-            st.markdown(f"### 🛒 {p.get('nome', 'Produto sem nome')}")
-            st.write(f"💲 **Preço unitário:** {format_to_brl(p.get('preco', 0))}")
-
-            st.write(
-                f"""
-                📦 **Quantidade inicial:** {qtd_inicial}  
-                📉 **Quantidade atual:** {qtd_atual}  
-                ✅ **Quantidade vendida:** **{qtd_vendida}**
-                """
-            )
-
-            st.write(
-                f"💵 **Total vendido deste produto:** "
-                f"**{format_to_brl(valor_produto)}**"
-            )
+            st.markdown(f"### 🛒 {p.get('nome', 'Produto')}")
+            st.write(f"💲 **Preço unitário:** {format_to_brl(preco)}")
+            st.write(f"📦 **Quantidade vendida:** {qtd_vendida}")
+            st.write(f"💵 **Total vendido deste produto:** {format_to_brl(total_produto)}")
 
             st.caption(
                 f"Marca: {p.get('marca', 'N/A')} • "
@@ -136,9 +116,9 @@ for p in vendidos:
         with col_img:
             foto = p.get("foto")
             if foto:
-                path = os.path.join(ASSETS_DIR, foto)
-                if os.path.exists(path):
-                    st.image(path, use_container_width=True)
+                caminho = os.path.join(ASSETS_DIR, foto)
+                if os.path.exists(caminho):
+                    st.image(caminho, use_container_width=True)
                 else:
                     st.caption("Imagem não encontrada")
             else:
@@ -148,4 +128,4 @@ for p in vendidos:
 # RODAPÉ
 # =========================
 st.markdown("---")
-st.caption(f"📅 Atualizado em {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+st.caption(f"Atualizado em {datetime.now().strftime('%d/%m/%Y %H:%M')}")
