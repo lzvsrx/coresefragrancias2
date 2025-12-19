@@ -7,7 +7,6 @@ from utils.database import (
     safe_int,
     safe_float
 )
-def load_css(file_name="style.css"): 
 def load_css(file_name="style.css"):
     if os.path.exists(file_name):
         try:
@@ -15,6 +14,7 @@ def load_css(file_name="style.css"):
                 st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
         except Exception:
             pass
+load_css("style.css")
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
 # =========================
@@ -136,6 +136,7 @@ for p in vendidos:
 # =========================
 st.markdown("---")
 st.caption(f"Atualizado em {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+
 
 
 
