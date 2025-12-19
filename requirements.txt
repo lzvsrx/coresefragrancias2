@@ -1,0 +1,13 @@
+# Interface e Web Framework
+streamlit
+
+# Processamento de Dados
+pandas
+openpyxl
+
+# Geração de Documentos (Relatórios)
+reportlab
+fpdf
+
+# Utilitários de Sistema
+python-dateutil
