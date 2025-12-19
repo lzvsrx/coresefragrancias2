@@ -7,7 +7,7 @@ from utils.database import (
     safe_int,
     safe_float
 )
-
+load_css("style.css")
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
 # =========================
@@ -129,3 +129,4 @@ for p in vendidos:
 # =========================
 st.markdown("---")
 st.caption(f"Atualizado em {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+
