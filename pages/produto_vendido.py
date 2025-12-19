@@ -28,15 +28,11 @@ def format_to_brl(value):
     except Exception:
         return "R$ 0,00"
 
-# 🔥 CSS ORIGINAL (EXATAMENTE COMO SOLICITADO)
 def load_css(file_name="style.css"):
     if os.path.exists(file_name):
         try:
             with open(file_name, encoding="utf-8") as f:
-                st.markdown(
-                    f"<style>{f.read()}</style>",
-                    unsafe_allow_html=True
-                )
+                st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
         except Exception:
             pass
 
@@ -45,16 +41,15 @@ load_css("style.css")
 # =========================
 # CABEÇALHO
 # =========================
-st.title("💰 Relatório de Produtos Vendidos")
+st.title("💰 Produtos Vendidos")
 st.markdown("---")
-st.info("Resumo completo das vendas realizadas com cálculo automático do faturamento.")
 
 # =========================
 # DADOS
 # =========================
 produtos = get_all_produtos(include_sold=True)
 
-# Apenas produtos que já tiveram venda
+# Apenas produtos que tiveram venda
 vendidos = [p for p in produtos if p.get("data_ultima_venda")]
 
 if not vendidos:
@@ -62,42 +57,26 @@ if not vendidos:
     st.stop()
 
 # =========================
-# CÁLCULOS
+# CÁLCULO DO VALOR TOTAL
+# (SOMA DO PREÇO UNITÁRIO)
 # =========================
-total_produtos_vendidos = len(vendidos)
-total_unidades_vendidas = 0
-valor_total_vendido = 0.0
+valor_total_produtos_vendidos = 0.0
 
 for p in vendidos:
-    qtd_inicial = safe_int(p.get("quantidade_inicial", 0))
-    qtd_atual = safe_int(p.get("quantidade", 0))
-    qtd_vendida = max(qtd_inicial - qtd_atual, 0)
-
-    preco = safe_float(p.get("preco", 0))
-
-    total_unidades_vendidas += qtd_vendida
-    valor_total_vendido += qtd_vendida * preco
+    preco_unitario = safe_float(p.get("preco", 0))
+    valor_total_produtos_vendidos += preco_unitario
 
 # =========================
-# MÉTRICAS
+# MÉTRICA PRINCIPAL
 # =========================
-col1, col2, col3 = st.columns(3)
+st.metric(
+    "💰 Valor total dos produtos vendidos (soma do preço unitário)",
+    format_to_brl(valor_total_produtos_vendidos)
+)
 
-with col1:
-    st.metric("📦 Produtos vendidos", total_produtos_vendidos)
-
-with col2:
-    st.metric("📉 Unidades vendidas", total_unidades_vendidas)
-
-with col3:
-    st.metric("💰 Valor total vendido", format_to_brl(valor_total_vendido))
-
-# =========================
-# DESTAQUE DO FATURAMENTO
-# =========================
 st.success(
     f"💰 **VALOR TOTAL DOS PRODUTOS VENDIDOS:** "
-    f"{format_to_brl(valor_total_vendido)}"
+    f"{format_to_brl(valor_total_produtos_vendidos)}"
 )
 
 st.markdown("---")
@@ -106,21 +85,14 @@ st.markdown("---")
 # LISTAGEM DOS PRODUTOS
 # =========================
 for p in vendidos:
-    qtd_inicial = safe_int(p.get("quantidade_inicial", 0))
-    qtd_atual = safe_int(p.get("quantidade", 0))
-    qtd_vendida = max(qtd_inicial - qtd_atual, 0)
-
-    preco = safe_float(p.get("preco", 0))
-    total_produto = qtd_vendida * preco
+    preco_unitario = safe_float(p.get("preco", 0))
 
     with st.container(border=True):
         col_info, col_img = st.columns([3, 1])
 
         with col_info:
             st.markdown(f"### 🛒 {p.get('nome', 'Produto')}")
-            st.write(f"💲 **Preço unitário:** {format_to_brl(preco)}")
-            st.write(f"📦 **Quantidade vendida:** {qtd_vendida}")
-            st.write(f"💵 **Total vendido deste produto:** {format_to_brl(total_produto)}")
+            st.write(f"💲 **Preço unitário:** {format_to_brl(preco_unitario)}")
 
             st.caption(
                 f"Marca: {p.get('marca', 'N/A')} • "
@@ -145,6 +117,4 @@ for p in vendidos:
 # RODAPÉ
 # =========================
 st.markdown("---")
-st.caption(
-    f"Atualizado em {datetime.now().strftime('%d/%m/%Y %H:%M')}"
-)
+st.caption(f"Atualizado em {datetime.now().strftime('%d/%m/%Y %H:%M')}")
