@@ -7,14 +7,7 @@ from utils.database import (
     safe_int,
     safe_float
 )
-def load_css(file_name="style.css"):
-    if os.path.exists(file_name):
-        try:
-            with open(file_name, encoding="utf-8") as f:
-                st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-        except Exception:
-            pass
-load_css("style.css")
+
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
 # =========================
@@ -29,27 +22,43 @@ st.set_page_config(
 # =========================
 def format_to_brl(value):
     try:
-        value = safe_float(value)
-        return f"R$ {value:_.2f}".replace(".", "X").replace("_", ".").replace("X", ",")
+        num = safe_float(value)
+        formatted = f"{num:_.2f}".replace(".", "X").replace("_", ".").replace("X", ",")
+        return f"R$ {formatted}"
     except Exception:
         return "R$ 0,00"
+
+# 🔥 CSS ORIGINAL (EXATAMENTE COMO SOLICITADO)
+def load_css(file_name="style.css"):
+    if os.path.exists(file_name):
+        try:
+            with open(file_name, encoding="utf-8") as f:
+                st.markdown(
+                    f"<style>{f.read()}</style>",
+                    unsafe_allow_html=True
+                )
+        except Exception:
+            pass
+
+load_css("style.css")
 
 # =========================
 # CABEÇALHO
 # =========================
 st.title("💰 Relatório de Produtos Vendidos")
 st.markdown("---")
+st.info("Resumo completo das vendas realizadas com cálculo automático do faturamento.")
 
 # =========================
-# BUSCA DE DADOS
+# DADOS
 # =========================
 produtos = get_all_produtos(include_sold=True)
 
-# Apenas produtos com venda registrada
+# Apenas produtos que já tiveram venda
 vendidos = [p for p in produtos if p.get("data_ultima_venda")]
 
 if not vendidos:
-    st.info("Nenhum produto vendido até o momento.")
+    st.success("Nenhum produto vendido até o momento.")
     st.stop()
 
 # =========================
@@ -87,20 +96,21 @@ with col3:
 # DESTAQUE DO FATURAMENTO
 # =========================
 st.success(
-    f"💰 **VALOR TOTAL DOS PRODUTOS VENDIDOS:** {format_to_brl(valor_total_vendido)}"
+    f"💰 **VALOR TOTAL DOS PRODUTOS VENDIDOS:** "
+    f"{format_to_brl(valor_total_vendido)}"
 )
 
 st.markdown("---")
 
 # =========================
-# LISTAGEM DETALHADA
+# LISTAGEM DOS PRODUTOS
 # =========================
 for p in vendidos:
     qtd_inicial = safe_int(p.get("quantidade_inicial", 0))
     qtd_atual = safe_int(p.get("quantidade", 0))
     qtd_vendida = max(qtd_inicial - qtd_atual, 0)
-    preco = safe_float(p.get("preco", 0))
 
+    preco = safe_float(p.get("preco", 0))
     total_produto = qtd_vendida * preco
 
     with st.container(border=True):
@@ -135,8 +145,6 @@ for p in vendidos:
 # RODAPÉ
 # =========================
 st.markdown("---")
-st.caption(f"Atualizado em {datetime.now().strftime('%d/%m/%Y %H:%M')}")
-
-
-
-
+st.caption(
+    f"Atualizado em {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+)
